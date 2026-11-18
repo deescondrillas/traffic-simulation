@@ -1,0 +1,42 @@
+newmtl ground
+Ka 0 0 0
+Kd 0.06 0.06 0.07
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl roads
+Ka 0 0 0
+Kd 0.33 0.33 0.35
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl parks
+Ka 0 0 0
+Kd 0.42 0.5 0.4
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl buildings
+Ka 0 0 0
+Kd 0.93 0.93 0.92
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl markings_white
+Ka 0 0 0
+Kd 0.95 0.95 0.95
+Ks 0 0 0
+d 1
+illum 1
+
+newmtl markings_yellow
+Ka 0 0 0
+Kd 0.95 0.75 0.1
+Ks 0 0 0
+d 1
+illum 1
+

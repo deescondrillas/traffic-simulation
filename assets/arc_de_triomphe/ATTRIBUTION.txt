@@ -1,0 +1,8 @@
+Arc de Triomphe simulation map
+
+3D model: "Carte 3d L'Arc de Triomphe PARIS" by Mitsu3D (generated with map2model.com),
+licensed CC BY-NC-SA. Converted from 3MF to OBJ, recoloured, roads/parks flattened, frame and
+text removed, lane markings added. Derivatives must keep this license and stay non-commercial.
+
+Lane markings and road_graph.json: derived from OpenStreetMap data,
+(c) OpenStreetMap contributors, ODbL 1.0 (https://www.openstreetmap.org/copyright).
