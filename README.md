@@ -41,45 +41,32 @@
 
 ## Requisitos
 > agentpy==0.1.5  
-> numpy  
 > pygame==2.6.1  
 > PyOpenGL  
-> matplotlib  
 
 ---
 
 ## Estructura
+Rama `environment`: solo el ambiente (mapa del Arco del Triunfo, semáforos con ciclo fijo y cámara orbital).
 ```diff
   📂 root
-  ├— Plan&rules.md
   ├— README.md
   ├— main.py
-  ├— train.py
   │
   ├— 📂 sim
-  │  ├— car_agent.py
   │  ├— city_model.py
   │  ├— config.py
-  │  ├— game_theory.py
   │  ├— objloader.py
   │  ├— renderer.py
-  │  ├— road_network.py
   │  └— traffic_light.py
   │
-  ├— 📂 assets
-  │  ├— 📂 arc_de_triomphe
-  │  └— 📂 car
-  │     ├— carroceria.obj
-  │     ├— llanta_FL.obj
-  │     ├— llanta_FR.obj
-  │     └— llantas_traseras.obj
-  │
-  ├— 📂 docs
-  │  ├— Activity.md
-  │  ├— Ejemplo_coaliciones.pdf
-  │  └— Proposal.md
-  │
-  └— 📂 reference
-     ├— 📂 Ejemplo_carro
-     └— 📂 Ejemplo_planos_cubos_carro
+  └— 📂 assets
+     ├— traffic_light.obj
+     └— 📂 arc_de_triomphe
+        ├— ATTRIBUTION.txt
+        ├— arc_de_triomphe.mtl
+        └— arc_de_triomphe.obj
 ```
+
+## Uso
+`python main.py` — flechas ←/→ giran la cámara, ↑/↓ cambian la altura, Esc sale.

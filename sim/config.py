@@ -26,7 +26,6 @@ LAMP_HALO_SEGMENTS = 24
 LAMP_HALO_OFFSET = -0.15    # m delante de la cara frontal, para no pelear con el z-buffer
 
 # --- Mapa ---
-ROAD_GRAPH = "assets/arc_de_triomphe/road_graph.json"
 MAP_OBJ = "assets/arc_de_triomphe/arc_de_triomphe.obj"
 
 # --- Semáforos del anillo exterior ---
