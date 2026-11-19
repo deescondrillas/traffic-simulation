@@ -2,11 +2,11 @@
 # A01739769 – Enrique Jiménez
 # 2026-11-18
 
-# --- Semáforo (modelo 3D) ---
+# Semáforo
 TRAFFIC_LIGHT_OBJ = "assets/traffic_light.obj"
 TRAFFIC_LIGHT_HEIGHT = 6.0  # m, altura del poste ya escalado
 
-# El OBJ no trae .mtl: cada foco se reconoce por el color de vértice con que se exportó
+# Reconocer focos por color
 LAMP_MESH_COLORS = {
     "red": (0.847059, 0.376471, 0.376471),
     "yellow": (0.941176, 0.984314, 0.419608),
@@ -25,16 +25,12 @@ LAMP_HALO_ALPHA = 0.6       # opacidad del halo en su centro
 LAMP_HALO_SEGMENTS = 24
 LAMP_HALO_OFFSET = -0.15    # m delante de la cara frontal, para no pelear con el z-buffer
 
-# --- Mapa ---
+# Mapa
 MAP_OBJ = "assets/arc_de_triomphe/arc_de_triomphe.obj"
 
-# --- Semáforos del anillo exterior ---
-# Uno por aproximación a cada cruce avenida–anillo: "ring" (el anillo antes del cruce),
-# "merge" (el radio que sale de la Étoile) y "outside" (la avenida que llega desde fuera).
-# (x, z): base del poste en m. Rumbo: hacia dónde avanzan los coches que lo ven, en grados
-# (0 = este, 90 = norte, antihorario); los focos miran en sentido contrario.
+# Ubicación de semáforos
 TRAFFIC_LIGHTS = (
-    # avenida                     aproximación      x        z    rumbo
+    # avenida                     aproximación    x        z      rumbo
     ("Avenue de Friedland",       "ring",       167.0,   -11.5,    96.6),
     ("Avenue de Friedland",       "merge",      157.0,   -11.0,     9.7),
     ("Avenue de Friedland",       "outside",    165.0,   -31.0,  -170.3),
@@ -71,27 +67,29 @@ TRAFFIC_LIGHTS = (
     ("Avenue des Champs-Élysées", "outside",    154.0,    67.0,   154.4),
 )
 
-# --- Simulación ---
-SIM_DT = 0.1  # s
+# Simulación
+SIM_DT = 0.1
 
-# --- Ciclo fijo de semáforos (provisional hasta TrafficLightAgent) ---
-RING_GREEN_TIME = 20.0   # s de verde fijo para el anillo
-MERGE_GREEN_TIME = 10.0  # s de verde fijo para el radio que se incorpora
-BLINK_TIME = 3.0         # s de verde parpadeante antes del amarillo
+# Ciclo fijo de semáforos
+RING_GREEN_TIME = 20.0
+MERGE_GREEN_TIME = 10.0
+BLINK_TIME = 3.0
 YELLOW_TIME = 3.0
 
-# --- Ventana y cámara ---
+# Ventana y cámara
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 800
-FPS = 60
-FOVY = 45.0
-ZNEAR = 1.0
 ZFAR = 2000.0
+ZNEAR = 1.0
+FOVY = 45.0
+FPS = 60
+
 CLEAR_COLOR = (0.55, 0.62, 0.7, 1.0)
-CAMERA_TARGET = (0.0, 25.0, 0.0)  # m, el Arco
+CAMERA_TARGET = (0.0, 25.0, 0.0)
 CAMERA_ORBIT_RADIUS = 350.00
 CAMERA_START_HEIGHT = 250.0
 CAMERA_MIN_HEIGHT = 2.0
-ORBIT_STEP = 1.0    # grados por cuadro
+HEIGHT_STEP = 3.0
+ORBIT_STEP = 1.0
+
 AUTO_ORBIT_STEP = ORBIT_STEP / 5
-HEIGHT_STEP = 3.0   # m por cuadro

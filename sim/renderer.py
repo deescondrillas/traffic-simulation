@@ -41,23 +41,15 @@ Triangle = tuple[Vertex, Vertex, Vertex]
 
 
 class _MeshData(OBJ):
-  """Solo lee el archivo: las display lists se arman aparte, una por pieza."""
-
   generate_on_init = False
 
 
 def _read_vertex_color_obj(path: str) -> list[tuple[list[int], list[Triangle]]]:
-  """Lee un OBJ con color por vértice (`v x y z r g b`) y lo regresa en triángulos.
-
-  Cada triángulo va junto con los índices de sus vértices, para poder separar
-  después las piezas conexas.
-  """
   obj = _MeshData(path)
   positions, normals = _to_map_frame(obj.vertices, obj.normals)
   triangles = []
   for face, norms, _, _ in obj.faces:
     corners = [(v - 1, n - 1 if n > 0 else None) for v, n in zip(face, norms)]
-    # Abanico: el OBJ ya viene en triángulos, pero así también acepta polígonos
     for k in range(1, len(corners) - 1):
       tri = (corners[0], corners[k], corners[k + 1])
       triangles.append((
@@ -68,11 +60,6 @@ def _read_vertex_color_obj(path: str) -> list[tuple[list[int], list[Triangle]]]:
 
 
 def _to_map_frame(positions: list[Vec3], normals: list[Vec3]) -> tuple[list[Vec3], list[Vec3]]:
-  """Pasa del marco exportado (poste hacia +Z, focos hacia −Y) al del mapa.
-
-  Queda la base del poste en el origen, Y hacia arriba, brazo hacia +X y focos
-  mirando hacia +Z, con la altura del poste en metros.
-  """
   low = min(p[2] for p in positions)
   high = max(p[2] for p in positions)
   base = [p for p in positions if p[2] == low]
@@ -92,7 +79,6 @@ def _lamp_of(color: Vec3) -> str | None:
 
 
 def _connected_pieces(triangles: list[tuple[list[int], Triangle]]) -> list[list[Triangle]]:
-  """Separa los triángulos en piezas conexas (un foco por cabeza del semáforo)."""
   parent = {}
 
   def find(a):
@@ -126,7 +112,6 @@ def _compile(triangles: list[Triangle], with_color: bool) -> int:
 
 
 def _compile_halos(pieces: list[list[Triangle]], color: Vec3, front_z: float) -> int:
-  """Un disco degradado, transparente hacia la orilla, delante de cada foco."""
   gl_list = glGenLists(1)
   glNewList(gl_list, GL_COMPILE)
   for piece in pieces:
@@ -148,16 +133,6 @@ def _compile_halos(pieces: list[list[Triangle]], color: Vec3, front_z: float) ->
 
 
 class TrafficLightMesh:
-  """Semáforo de `assets/traffic_light.obj` con focos que se encienden por código.
-
-  El OBJ no trae `.mtl`, pero sí color por vértice: cada foco se reconoce por el
-  color con que se exportó (`LAMP_MESH_COLORS`). El cuerpo y cada color de foco se
-  compilan en display lists separadas, así un solo modelo sirve para los 11
-  semáforos en cualquier estado.
-
-  Requiere `GL_COLOR_MATERIAL` activo si hay iluminación, igual que el ejemplo de clase.
-  """
-
   def __init__(self, path: str = TRAFFIC_LIGHT_OBJ) -> None:
     triangles = _read_vertex_color_obj(path)
     front_z = max(p[2] for _, tri in triangles for p, _, _ in tri)
@@ -175,7 +150,6 @@ class TrafficLightMesh:
     }
 
   def draw(self, lit: str | None = None) -> None:
-    """Dibuja el semáforo con el foco `lit` ("red", "yellow" o "green") encendido."""
     glCallList(self._body)
     for name, gl_list in self._lamps.items():
       if name != lit:
@@ -185,12 +159,10 @@ class TrafficLightMesh:
       return
 
     glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    # Sin iluminación el foco sale a color pleno desde cualquier ángulo: parece emitir luz
     glDisable(GL_LIGHTING)
     glDisable(GL_TEXTURE_2D)
     glColor3f(*LAMP_ON_COLORS[lit])
     glCallList(self._lamps[lit])
-    # Mezcla aditiva para el resplandor; sin escribir profundidad para no tapar lo de atrás
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE)
     glDepthMask(GL_FALSE)
@@ -204,7 +176,6 @@ class TrafficLightMesh:
 
 
 def lit_lamp(state: str, seconds_in_state: float) -> str | None:
-  """Foco encendido para un estado del semáforo; el verde parpadeante alterna con apagado."""
   if state == "blinking_green":
     return "green" if int(seconds_in_state / GREEN_BLINK_PERIOD) % 2 == 0 else None
   return state
@@ -225,8 +196,6 @@ def setup_gl(zfar: float = ZFAR) -> None:
 
 
 class OrbitCamera:
-  """Cámara que gira sola alrededor de `target` mirándolo siempre; solo cambia ángulo y altura."""
-
   def __init__(
     self,
     target: Vec3 = CAMERA_TARGET,
@@ -239,7 +208,6 @@ class OrbitCamera:
     self.angle = 0.0 # grados
 
   def update(self, turn: int, climb: int, orbit_step: float = ORBIT_STEP, height_step: float = HEIGHT_STEP) -> None:
-    """`turn` y `climb` valen −1, 0 o 1 según las flechas presionadas."""
     self.angle += orbit_step * turn + AUTO_ORBIT_STEP
     self.height = max(CAMERA_MIN_HEIGHT, self.height + height_step * climb)
 
@@ -248,16 +216,10 @@ class OrbitCamera:
     eye_x = self.target[0] + self.radius * sin(radians(self.angle))
     eye_z = self.target[2] + self.radius * cos(radians(self.angle))
     gluLookAt(eye_x, self.height, eye_z, *self.target, 0.0, 1.0, 0.0)
-    # La luz se fija después de la cámara para que quede en coordenadas del mundo
     glLightfv(GL_LIGHT0, GL_POSITION, (0.5, 1.0, 1.0, 0.0))
 
 
 def _compile_map(path: str) -> int:
-  """Display list del mapa con un solo `glBegin` por material.
-
-  `OBJ.generate` abre un `GL_POLYGON` por cara; con las ~100 000 caras del mapa eso
-  baja a menos de 10 FPS.
-  """
   obj = _MeshData(path)
   by_material = {}
   for face, norms, _, material in obj.faces:
@@ -280,8 +242,6 @@ def _compile_map(path: str) -> int:
 
 
 class CityRenderer:
-  """Dibuja el mapa y los semáforos de un `CityModel`, sin modificarlo."""
-
   def __init__(self) -> None:
     self._map = _compile_map(MAP_OBJ)
     self._light = TrafficLightMesh()
@@ -292,7 +252,6 @@ class CityRenderer:
       glPushMatrix()
       glTranslatef(light.x, 0.0, light.z)
       glRotatef(degrees(light.yaw), 0.0, 1.0, 0.0)
-      # Espejo: el brazo del modelo apunta a la derecha del conductor y el poste va en la esquina derecha
       glScalef(-1.0, 1.0, 1.0)
       self._light.draw(lit_lamp(light.state, light.state_time))
       glPopMatrix()

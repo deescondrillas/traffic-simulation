@@ -8,19 +8,13 @@ from dataclasses import dataclass
 
 @dataclass
 class TrafficLight:
-  """Un semáforo en una aproximación al anillo exterior.
-
-  `approach` es "ring" (el anillo antes del cruce), "merge" (el radio que sale de la
-  Étoile y se incorpora) u "outside" (la avenida que llega desde fuera del mapa).
-  """
-
   avenue: str
   approach: str
   x: float
   z: float
-  yaw: float # rad, giro del modelo alrededor de Y para que los focos miren al tráfico
+  yaw: float
   state: str = "red"
-  state_time: float = 0.0 # s en el estado actual, para el parpadeo
+  state_time: float = 0.0 
 
   def set_state(self, state: str) -> None:
     if state != self.state:
@@ -29,13 +23,6 @@ class TrafficLight:
 
 
 class FixedTimeIntersection:
-  """Ciclo fijo de un cruce: verde al anillo y luego al radio que se incorpora.
-
-  Es provisional: `TrafficLightAgent` (BDI + Shapley) lo reemplaza en M4. La avenida
-  que llega desde fuera copia al radio que se incorpora, aunque no traiga coches; sin
-  radio (Av. Mac-Mahon) el anillo queda siempre en verde y la de fuera en rojo.
-  """
-
   def __init__(self, ring: TrafficLight, merge: TrafficLight | None, outside: TrafficLight | None) -> None:
     self.ring = ring
     self.merge = merge

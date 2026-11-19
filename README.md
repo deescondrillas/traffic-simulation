@@ -67,6 +67,3 @@ Rama `environment`: solo el ambiente (mapa del Arco del Triunfo, semáforos con 
         ├— arc_de_triomphe.mtl
         └— arc_de_triomphe.obj
 ```
-
-## Uso
-`python main.py` — flechas ←/→ giran la cámara, ↑/↓ cambian la altura, Esc sale.
