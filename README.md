@@ -47,7 +47,6 @@
 ---
 
 ## Estructura
-Rama `environment`: solo el ambiente (mapa del Arco del Triunfo, semáforos con ciclo fijo y cámara orbital).
 ```diff
   📂 root
   ├— README.md
