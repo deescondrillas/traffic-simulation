@@ -90,17 +90,51 @@ class Carro:
         self.Avanza = True
         
     def setRota(self, dir):
-
+        self.Rota = True
+        if dir == "izq":
+            self.Body_Ry += 5.0
+        elif dir == "der":
+            self.Body_Ry -= 5.0
+        else:
+            self.Rota = False
 
         
     def update(self):
         if self.Avanza:
-    
+            # Se actualiza la posicion del carro
+            self.Position += self.vel * self.Direction
+            # Se actualiza el angulo de rotacion de las llantas traseras
+            self.LlantaT_angZ += self.LlantaT_angZ_delta
+            # Se actualiza la matriz de transformacion de las llantas traseras
+            self.M_Llantas_traseras[0][3] = self.LlantaT_pos[0]
+            self.M_Llantas_traseras[1][3] = self.LlantaT_pos[1]
+            self.M_Llantas_traseras[2][3] = self.LlantaT_pos[2]
+            # Se actualiza la matriz de transformacion de las llantas frontales
+            self.M_Llanta_F[0][3] = self.LlantaFL_pos[0]
+            self.M_Llanta_F[1][3] = self.LlantaFL_pos[1]
+            self.M_Llanta_F[2][3] = self.LlantaFL_pos[2]
+            
     # T_llanta: vector para ubicar la llanta en su posicion
     # id_llanta: para identificar si es llanta izquierda(1) o derecha(2)
     def llantaFrontal(self, T_llanta, id_llanta):
         # self.Ll_F_Ry
-    
+        self.L1 = self.Llanta_radio * math.sin(math.radians(self.Ll_F_Ry))
+        self.L2 = self.Llanta_radio * math.cos(math.radians(self.Ll_F_Ry))
+        if id_llanta == 1:
+            glTranslatef(T_llanta[0], T_llanta[1], T_llanta[2])
+            glRotatef(self.Ll_F_Ry, 0.0, 1.0, 0.0)
+            glTranslatef(-T_llanta[0], -T_llanta[1], -T_llanta[2])
+            glTranslatef(T_llanta[0] + self.L1, T_llanta[1], T_llanta[2] + self.L2)
+            glRotatef(self.LlantaT_angZ, 1.0, 0.0, 0.0)
+            glTranslatef(-T_llanta[0] - self.L1, -T_llanta[1], -T_llanta[2] - self.L2)
+        elif id_llanta == 2:
+            glTranslatef(T_llanta[0], T_llanta[1], T_llanta[2])
+            glRotatef(self.Ll_F_Ry, 0.0, 1.0, 0.0)
+            glTranslatef(-T_llanta[0], -T_llanta[1], -T_llanta[2])
+            glTranslatef(T_llanta[0] + self.L1, T_llanta[1], T_llanta[2] + self.L2)
+            glRotatef(self.LlantaT_angZ, 1.0, 0.0, 0.0)
+            glTranslatef(-T_llanta[0] - self.L1, -T_llanta[1], -T_llanta[2] - self.L2)
+
     def draw(self):
         glPushMatrix() #e0
         # Se define la maquina de estados
