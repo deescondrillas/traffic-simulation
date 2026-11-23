@@ -30,9 +30,7 @@ class Car:
         self.type = type
         self.component = parts
 
-        # Centro de cada llanta en coordenadas del modelo (dentro de glScalef).
-        # Los .obj de las llantas vienen centrados en el origen, por eso
-        # hay que trasladarlos a su lugar.
+        # Centro de cada llanta en coordenadas del modelo
         self.tire_BaseRadius = spec["tire_radius"]
         self.tireT_pos = np.array(spec["rear_axle"])
         self.tireFL_pos = np.array(spec["front_tire"])
@@ -65,8 +63,7 @@ class Car:
     def setCircle(self, center, radius, theta):
         # Circulo EXACTO de radio 'radius' alrededor de center = (x, z),
         # en sentido antihorario visto desde arriba. theta = angulo inicial
-        # (radianes). La posicion se calcula directo desde el angulo, asi
-        # que no se acumula error.
+        # (radianes).
         self.mode = 'circle'
         self.center = center
         self.radius = radius
@@ -100,8 +97,7 @@ class Car:
 
     def setRotate(self, dir):
         # Gira solo las llantas frontales (direccion). Funciona aunque el
-        # carro este quieto: asi se puede planear el giro antes de avanzar.
-        # La carroceria gira despues, en update(), al moverse.
+        # carro este quieto
         if dir == 'left':
             self.T1_F_ry = min(self.T1_F_ry + 5.0, self.MAX_STEER)
         elif dir == 'right':
@@ -140,12 +136,6 @@ class Car:
         # En linea recta: al llegar al final, vuelve al inicio
         if self.mode == 'line' and np.linalg.norm(self.pos - self.start) >= self.length:
             self.pos = self.start.copy()
-
-    # OpenGL aplica las transformaciones al vertice en orden INVERSO al que
-    # aparecen en el codigo: la ultima llamada antes de render() es la primera
-    # que le pasa a la llanta. Como la llanta viene centrada en el origen,
-    # cada rotacion ocurre sobre su propio centro y no hace falta trasladar
-    # ida y vuelta a un pivote.
 
     def _drawRearTires(self, part, center):
         glPushMatrix()

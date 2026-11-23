@@ -30,13 +30,9 @@ UP_Y=1
 UP_Z=0
 
 # ---------------- Mapa: glorieta del Arco del Triunfo ----------------
-# El .obj ya viene en metros, Y arriba, origen en el Arco, +X este, -Z norte
-# (por eso se carga SIN swapyz).
 MAP_FILE = os.path.join("arc_de_triomphe", "arc_de_triomphe.obj")
 ROAD_Y = 0.15  # altura de la superficie de las calles en el .obj
 
-# Centros (x, z) y radios ajustados a los carriles de road_graph.json.
-# Las dos glorietas giran antihorario visto desde arriba (se maneja por la derecha).
 INNER_CENTER = (-2.37, 0.94)                     # Place Charles de Gaulle
 INNER_LANES = [73.97, 71.27, 68.57, 65.85, 63.16]  # un carro por carril
 OUTER_CENTER = (-3.2, 2.05)                      # Rue de Tilsitt / Rue de Presbourg
@@ -54,16 +50,15 @@ PLAYER_RY = 118.4  # grados
 
 # ---------------- Carros ----------------
 CAR_TYPE = "mustang"
-CAR_SCALE = 0.5  # el .obj mide ~9.85 de largo -> ~4.9 m
-CAR_VEL = 0.4    # metros por frame (~40 km/h a ~30 fps)
+CAR_SCALE = 0.5  
+CAR_VEL = 0.4    
 
 # Ruta absoluta a assets/, independiente del directorio desde donde se ejecute
 ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets")
 
 city_map = None
-cars = []          # todos los carros (se actualizan y dibujan)
+cars = []          
 player = None      # el carro que se maneja con el teclado
-chase_cam = False  # tecla V: camara siguiendo al jugador
 
 pygame.init()
 
@@ -121,14 +116,7 @@ def Init():
 
 def setCamera():
     glLoadIdentity()
-    if chase_cam:
-        p = player
-        d = p.Direction
-        gluLookAt(p.pos[0] - 14 * d[0], p.pos[1] + 6, p.pos[2] - 14 * d[2],
-                  p.pos[0] + 10 * d[0], p.pos[1], p.pos[2] + 10 * d[2],
-                  0, 1, 0)
-    else:
-        gluLookAt(EYE_X,EYE_Y,EYE_Z,CENTER_X,CENTER_Y,CENTER_Z,UP_X,UP_Y,UP_Z)
+    gluLookAt(EYE_X,EYE_Y,EYE_Z,CENTER_X,CENTER_Y,CENTER_Z,UP_X,UP_Y,UP_Z)
     # La luz se fija despues de la camara para que quede fija en el mundo
     glLightfv(GL_LIGHT0, GL_POSITION, (0.3, 1.0, 0.5, 0.0))
 
@@ -160,9 +148,6 @@ while not done:
                 player.setRotate('right')
             elif event.key == pygame.K_c:
                 player.setRotate('center')
-            # V: cambiar entre vista general y camara siguiendo al jugador
-            elif event.key == pygame.K_v:
-                chase_cam = not chase_cam
         elif event.type == pygame.QUIT:
             done = True
 
