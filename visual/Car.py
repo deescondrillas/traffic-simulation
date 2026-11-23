@@ -56,50 +56,44 @@ class Car:
         self.tireT_angZ_delta = (-1.0 * 360.0 * self.vel) / (2.0 * np.pi * tire_Radius)
         self.tireT_angZ = 0.0
 
-        # Modo circulo exacto (None = manejo libre con el modelo de bicicleta)
-        self.circle = None
+        # Como se mueve el carro:
+        #   'manual' -> lo maneja el usuario (modelo de bicicleta)
+        #   'circle' -> da vueltas solo en un circulo (setCircle)
+        #   'line'   -> va solo en linea recta y vuelve a empezar (setLine)
+        self.mode = 'manual'
 
-    def setCircle(self, center, alpha, side='left'):
-        # El origen del carro (pos) recorre un circulo EXACTO de radio alpha
-        # alrededor de center = (x, z). La posicion se calcula directo desde
-        # el angulo, asi que no se acumula error al integrar.
-        # El carro se "pega" al circulo en el punto mas cercano a donde esta.
-        s = 1.0 if side == 'left' else -1.0
+    def setCircle(self, center, radius, theta):
+        # Circulo EXACTO de radio 'radius' alrededor de center = (x, z),
+        # en sentido antihorario visto desde arriba. theta = angulo inicial
+        # (radianes). La posicion se calcula directo desde el angulo, asi
+        # que no se acumula error.
+        self.mode = 'circle'
+        self.center = center
+        self.radius = radius
+        self.theta = theta
+        self.T1_F_ry = math.degrees(math.atan(self.L / radius))  # solo visual
+        self.Moving = True
+        self._placeOnCircle()
 
-        # Distancia del origen del modelo al eje trasero (escalada)
-        d = -self.tireT_pos[0] * self.Scale
-        if alpha <= d:
-            raise ValueError(f"alpha debe ser mayor que {d:.1f}")
-
-        # pos = C + s*alpha*(sin th, 0, cos th)  =>  th = atan2(s*dx, s*dz)
-        dx = self.pos[0] - center[0]
-        dz = self.pos[2] - center[1]
-        theta = math.atan2(s * dx, s * dz)
-
-        self.circle = {"cx": center[0], "cz": center[1],
-                       "alpha": alpha, "s": s, "theta": theta}
-
-        # Llantas frontales al angulo que corresponde a ese circulo.
-        # El eje trasero va por dentro, a radio sqrt(alpha^2 - d^2).
-        r_rear = math.sqrt(alpha * alpha - d * d)
-        self.T1_F_ry = s * math.degrees(math.atan(self.L / r_rear))
-
-        self._applyCircle()
-
-    def clearCircle(self):
-        self.circle = None
-        self.T1_F_ry = 0.0
-
-    def _applyCircle(self):
-        c = self.circle
-        th = c["theta"]
-        # Posicion sobre el circulo
-        self.pos[0] = c["cx"] + c["s"] * c["alpha"] * math.sin(th)
-        self.pos[2] = c["cz"] + c["s"] * c["alpha"] * math.cos(th)
-        # Orientacion tangente: Direction = (cos th, 0, -sin th)
+    def _placeOnCircle(self):
+        th = self.theta
+        self.pos[0] = self.center[0] + self.radius * math.sin(th)
+        self.pos[2] = self.center[1] + self.radius * math.cos(th)
+        # Tangente al circulo: Direction = (cos th, 0, -sin th)
         self.Body_ry = math.degrees(th) % 360.0
         self.Direction[0] = math.cos(th)
         self.Direction[2] = -math.sin(th)
+
+    def setLine(self, start, end):
+        # Va en linea recta de start a end = (x, z); al llegar vuelve a start
+        self.mode = 'line'
+        self.start = np.array([start[0], self.pos[1], start[1]])
+        dx, dz = end[0] - start[0], end[1] - start[1]
+        self.length = math.hypot(dx, dz)
+        self.Body_ry = math.degrees(math.atan2(-dz, dx))  # viendo hacia end
+        self.T1_F_ry = 0.0
+        self.pos = self.start.copy()
+        self.Moving = True
 
     def toggleMove(self):
         self.Moving = not self.Moving
@@ -108,8 +102,6 @@ class Car:
         # Gira solo las llantas frontales (direccion). Funciona aunque el
         # carro este quieto: asi se puede planear el giro antes de avanzar.
         # La carroceria gira despues, en update(), al moverse.
-        # Manejar a mano saca al carro del modo circulo.
-        self.circle = None
         if dir == 'left':
             self.T1_F_ry = min(self.T1_F_ry + 5.0, self.MAX_STEER)
         elif dir == 'right':
@@ -121,12 +113,13 @@ class Car:
         if not self.Moving:
             return
 
-        if self.circle is not None:
-            # Avanzar el angulo: arco recorrido = vel  =>  d(theta) = vel/alpha
-            c = self.circle
-            c["theta"] += c["s"] * self.vel / c["alpha"]
-            self._applyCircle()
-            self.tireT_angZ = (self.tireT_angZ + self.tireT_angZ_delta) % 360.0
+        # Las llantas solo ruedan cuando el carro avanza
+        self.tireT_angZ = (self.tireT_angZ + self.tireT_angZ_delta) % 360.0
+
+        if self.mode == 'circle':
+            # Arco recorrido = vel  =>  d(theta) = vel / radius
+            self.theta += self.vel / self.radius
+            self._placeOnCircle()
             return
 
         # La carroceria gira segun el angulo de las llantas frontales
@@ -144,8 +137,9 @@ class Car:
         # Se actualiza la posicion del carro
         self.pos += self.vel * self.Direction
 
-        # Las llantas solo ruedan cuando el carro avanza
-        self.tireT_angZ = (self.tireT_angZ + self.tireT_angZ_delta) % 360.0
+        # En linea recta: al llegar al final, vuelve al inicio
+        if self.mode == 'line' and np.linalg.norm(self.pos - self.start) >= self.length:
+            self.pos = self.start.copy()
 
     # OpenGL aplica las transformaciones al vertice en orden INVERSO al que
     # aparecen en el codigo: la ultima llamada antes de render() es la primera
