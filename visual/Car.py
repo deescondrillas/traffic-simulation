@@ -56,6 +56,51 @@ class Car:
         self.tireT_angZ_delta = (-1.0 * 360.0 * self.vel) / (2.0 * np.pi * tire_Radius)
         self.tireT_angZ = 0.0
 
+        # Modo circulo exacto (None = manejo libre con el modelo de bicicleta)
+        self.circle = None
+
+    def setCircle(self, center, alpha, side='left'):
+        # El origen del carro (pos) recorre un circulo EXACTO de radio alpha
+        # alrededor de center = (x, z). La posicion se calcula directo desde
+        # el angulo, asi que no se acumula error al integrar.
+        # El carro se "pega" al circulo en el punto mas cercano a donde esta.
+        s = 1.0 if side == 'left' else -1.0
+
+        # Distancia del origen del modelo al eje trasero (escalada)
+        d = -self.tireT_pos[0] * self.Scale
+        if alpha <= d:
+            raise ValueError(f"alpha debe ser mayor que {d:.1f}")
+
+        # pos = C + s*alpha*(sin th, 0, cos th)  =>  th = atan2(s*dx, s*dz)
+        dx = self.pos[0] - center[0]
+        dz = self.pos[2] - center[1]
+        theta = math.atan2(s * dx, s * dz)
+
+        self.circle = {"cx": center[0], "cz": center[1],
+                       "alpha": alpha, "s": s, "theta": theta}
+
+        # Llantas frontales al angulo que corresponde a ese circulo.
+        # El eje trasero va por dentro, a radio sqrt(alpha^2 - d^2).
+        r_rear = math.sqrt(alpha * alpha - d * d)
+        self.T1_F_ry = s * math.degrees(math.atan(self.L / r_rear))
+
+        self._applyCircle()
+
+    def clearCircle(self):
+        self.circle = None
+        self.T1_F_ry = 0.0
+
+    def _applyCircle(self):
+        c = self.circle
+        th = c["theta"]
+        # Posicion sobre el circulo
+        self.pos[0] = c["cx"] + c["s"] * c["alpha"] * math.sin(th)
+        self.pos[2] = c["cz"] + c["s"] * c["alpha"] * math.cos(th)
+        # Orientacion tangente: Direction = (cos th, 0, -sin th)
+        self.Body_ry = math.degrees(th) % 360.0
+        self.Direction[0] = math.cos(th)
+        self.Direction[2] = -math.sin(th)
+
     def toggleMove(self):
         self.Moving = not self.Moving
 
@@ -63,6 +108,8 @@ class Car:
         # Gira solo las llantas frontales (direccion). Funciona aunque el
         # carro este quieto: asi se puede planear el giro antes de avanzar.
         # La carroceria gira despues, en update(), al moverse.
+        # Manejar a mano saca al carro del modo circulo.
+        self.circle = None
         if dir == 'left':
             self.T1_F_ry = min(self.T1_F_ry + 5.0, self.MAX_STEER)
         elif dir == 'right':
@@ -72,6 +119,14 @@ class Car:
 
     def update(self):
         if not self.Moving:
+            return
+
+        if self.circle is not None:
+            # Avanzar el angulo: arco recorrido = vel  =>  d(theta) = vel/alpha
+            c = self.circle
+            c["theta"] += c["s"] * self.vel / c["alpha"]
+            self._applyCircle()
+            self.tireT_angZ = (self.tireT_angZ + self.tireT_angZ_delta) % 360.0
             return
 
         # La carroceria gira segun el angulo de las llantas frontales

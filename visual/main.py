@@ -31,6 +31,9 @@ UP_Z=0
 DimBoard = 200.0
 FLOOR_Y = -20.0  # altura del plano gris
 cars = []
+# Circulo exacto (tecla O): centro (x, z) y radio alpha
+CIRCLE_CENTER = (0.0, 0.0)
+CIRCLE_ALPHA = 120.0
 # Cuantos carros de cada tipo (los tipos se definen en CAR_MODELS, en Car.py)
 n_cars = {
     "mustang": 1
@@ -112,6 +115,13 @@ while not done:
             elif event.key == pygame.K_c:
                 for car in cars:
                     car.setRotate('center')
+            # O: activar/desactivar circulo exacto alrededor de CIRCLE_CENTER
+            elif event.key == pygame.K_o:
+                for car in cars:
+                    if car.circle is None:
+                        car.setCircle(CIRCLE_CENTER, CIRCLE_ALPHA, 'left')
+                    else:
+                        car.clearCircle()
         elif event.type == pygame.QUIT:
             done = True
 
