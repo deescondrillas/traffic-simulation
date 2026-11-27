@@ -1,27 +1,35 @@
-# A01739410 – Franco De Escondrillas
-# A01739769 – Enrique Jiménez
-# 2026-11-18
+#  Franco De Escondrillas ft. Claude Code · 2026-11-26
+"""Simulación en vivo: el ciclo de pygame avanza el modelo a paso fijo y el renderizador solo lo lee.
 
-from sim.config import FPS, SCREEN_HEIGHT, SCREEN_WIDTH, SIM_DT
-from sim.renderer import CityRenderer, OrbitCamera, setup_gl
-from sim.city_model import CityModel
-from pygame.locals import *
-from OpenGL.GL import *
+Antes, `train.ipynb` guarda a los conductores con curso de manejo; sin ese archivo salen novatos.
+"""
+
 import pygame
+from OpenGL.GL import *
+from pygame.locals import *
+
+from config import (
+  DRIVERS_FILE, FPS, N_CARS, SCREEN_HEIGHT, SCREEN_WIDTH, SEED, SIM_DT,
+)
+from environment.city_model import CityModel
+from visual.renderer import CityRenderer, OrbitCamera, setup_gl
+
+CAPTION_EVERY = 30  # cuadros entre actualizaciones del título de la ventana
 
 
 def main() -> None:
   pygame.init()
   pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), DOUBLEBUF | OPENGL)
-  pygame.display.set_caption("Étoile: flechas para mover la cámara, Esc para salir")
   setup_gl()
-  model = CityModel({"seed": 1})
+  model = CityModel({"n_cars": N_CARS, "seed": SEED, "drivers": DRIVERS_FILE})
   model.sim_setup()
+  drivers = "con curso de manejo" if model.trained else "novatos (corre train.ipynb)"
   renderer = CityRenderer()
   camera = OrbitCamera()
   clock = pygame.time.Clock()
 
   acc = 0.0
+  frame = 0
   done = False
   while not done:
     for event in pygame.event.get():
@@ -41,6 +49,12 @@ def main() -> None:
     renderer.draw(model)
     pygame.display.flip()
     clock.tick(FPS)
+
+    frame += 1
+    if frame % CAPTION_EVERY == 0:
+      pygame.display.set_caption(
+        f"Étoile · {len(model.cars)} coches {drivers} · t = {model.time:5.0f} s · "
+        f"{clock.get_fps():3.0f} FPS · flechas: cámara, Esc: salir")
 
   renderer.free()
   pygame.quit()

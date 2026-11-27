@@ -40,46 +40,42 @@
 ---
 
 ## Requisitos
-> agentpy==0.1.5  
-> numpy  
-> pygame==2.6.1  
-> PyOpenGL  
-> matplotlib  
-
+```
+agentpy==0.1.5
+pygame==2.6.1
+matplotlib
+PyOpenGL
+numpy
+```
 ---
 
 ## Estructura
 ```diff
   📂 root
-  ├— Plan&rules.md
   ├— README.md
+  ├— config.py
   ├— main.py
-  ├— train.py
   │
-  ├— 📂 sim
+  ├— 📂 agents
   │  ├— car_agent.py
-  │  ├— city_model.py
-  │  ├— config.py
   │  ├— game_theory.py
-  │  ├— objloader.py
-  │  ├— renderer.py
-  │  ├— road_network.py
   │  └— traffic_light.py
   │
-  ├— 📂 assets
-  │  ├— 📂 arc_de_triomphe
-  │  └— 📂 car
-  │     ├— carroceria.obj
-  │     ├— llanta_FL.obj
-  │     ├— llanta_FR.obj
-  │     └— llantas_traseras.obj
+  ├— 📂 environment
+  │  ├— city_model.py
+  │  └— road_network.py
   │
-  ├— 📂 docs
-  │  ├— Activity.md
-  │  ├— Ejemplo_coaliciones.pdf
-  │  └— Proposal.md
+  ├— 📂 visual
+  │  ├— objloader.py
+  │  └— renderer.py
   │
-  └— 📂 reference
-     ├— 📂 Ejemplo_carro
-     └— 📂 Ejemplo_planos_cubos_carro
+  ├— 📂 training
+  │  ├— coalitions.ipynb
+  │  ├— train.ipynb
+  │  └— training.json
+  │
+  └— 📂 assets
+     ├— 📁 arc_de_triomphe
+     ├— 📁 traffic_light
+     └— 📁 car
 ```
