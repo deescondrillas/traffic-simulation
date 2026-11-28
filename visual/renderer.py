@@ -1,12 +1,6 @@
-#  Franco De Escondrillas ft. Claude Code · 2026-11-26
-
-import colorsys
-import os
-from math import cos, degrees, radians, sin, tau
-import numpy as np
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from OpenGL.arrays import vbo
+# A01739410 – Franco De Escondrillas
+# A01739769 – Enrique Jiménez
+# 2026-11-30
 
 from config import (
   AUTO_ORBIT_STEP,
@@ -24,14 +18,17 @@ from config import (
   ROAD_Y,
   TAIL_LAMP,
   TIRE_RADIUS,
+  CAMERA_MAX_DISTANCE,
+  CAMERA_MAX_ELEVATION,
+  CAMERA_MIN_DISTANCE,
   CAMERA_MIN_HEIGHT,
-  CAMERA_ORBIT_RADIUS,
-  CAMERA_START_HEIGHT,
+  CAMERA_START_DISTANCE,
+  CAMERA_START_ELEVATION,
   CAMERA_TARGET,
   CLEAR_COLOR,
   FOVY,
   GREEN_BLINK_PERIOD,
-  HEIGHT_STEP,
+  ELEVATION_STEP,
   LAMP_COLOR_TOLERANCE,
   LAMP_HALO_ALPHA,
   LAMP_HALO_OFFSET,
@@ -42,6 +39,7 @@ from config import (
   LAMP_ON_COLORS,
   MAP_OBJ,
   ORBIT_STEP,
+  ZOOM_FACTOR,
   SCREEN_HEIGHT,
   SCREEN_WIDTH,
   TRAFFIC_LIGHT_HEIGHT,
@@ -49,8 +47,15 @@ from config import (
   ZFAR,
   ZNEAR,
 )
+from math import asin, cos, degrees, radians, sin, tau
 from agents.car_agent import STOPPED, YIELDING
 from visual.objloader import OBJ
+from OpenGL.arrays import vbo
+from OpenGL.GLU import *
+from OpenGL.GL import *
+import numpy as np
+import colorsys
+import os
 
 Vec3 = tuple[float, float, float]
 Vertex = tuple[Vec3, Vec3, Vec3] # posición, normal, color
@@ -282,29 +287,35 @@ def setup_gl(zfar: float = ZFAR) -> None:
 
 
 class OrbitCamera:
-  """Cámara que gira sola alrededor de `target` mirándolo siempre; solo cambia ángulo y altura."""
+  """Cámara sobre una esfera centrada en `target`: ángulo, elevación y distancia; siempre lo mira."""
 
   def __init__(
     self,
     target: Vec3 = CAMERA_TARGET,
-    radius: float = CAMERA_ORBIT_RADIUS,
-    height: float = CAMERA_START_HEIGHT,
+    distance: float = CAMERA_START_DISTANCE,
+    elevation: float = CAMERA_START_ELEVATION,
   ) -> None:
     self.target = target
-    self.radius = radius
-    self.height = height
+    self.distance = distance
+    self.elevation = elevation # grados
     self.angle = 0.0 # grados
+    self.auto_orbit = True
 
-  def update(self, turn: int, climb: int, orbit_step: float = ORBIT_STEP, height_step: float = HEIGHT_STEP) -> None:
-    """`turn` y `climb` valen −1, 0 o 1 según las flechas presionadas."""
-    self.angle += orbit_step * turn + AUTO_ORBIT_STEP
-    self.height = max(CAMERA_MIN_HEIGHT, self.height + height_step * climb)
+  def update(self, turn: int, climb: int, zoom: int) -> None:
+    """`turn`, `climb` y `zoom` valen −1, 0 o 1 según las teclas presionadas."""
+    self.angle += ORBIT_STEP * turn + AUTO_ORBIT_STEP * self.auto_orbit
+    self.distance = min(CAMERA_MAX_DISTANCE, max(CAMERA_MIN_DISTANCE, self.distance / ZOOM_FACTOR ** zoom))
+    # Elevación mínima para que el ojo no baje de CAMERA_MIN_HEIGHT; depende de la distancia
+    floor = degrees(asin(max(-1.0, min(1.0, (CAMERA_MIN_HEIGHT - self.target[1]) / self.distance))))
+    self.elevation = min(CAMERA_MAX_ELEVATION, max(floor, self.elevation + ELEVATION_STEP * climb))
 
   def apply(self) -> None:
     glLoadIdentity()
-    eye_x = self.target[0] + self.radius * sin(radians(self.angle))
-    eye_z = self.target[2] + self.radius * cos(radians(self.angle))
-    gluLookAt(eye_x, self.height, eye_z, *self.target, 0.0, 1.0, 0.0)
+    ground = self.distance * cos(radians(self.elevation)) # radio de la órbita en el plano horizontal
+    eye_x = self.target[0] + ground * sin(radians(self.angle))
+    eye_y = self.target[1] + self.distance * sin(radians(self.elevation))
+    eye_z = self.target[2] + ground * cos(radians(self.angle))
+    gluLookAt(eye_x, eye_y, eye_z, *self.target, 0.0, 1.0, 0.0)
     # La luz se fija después de la cámara para que quede en coordenadas del mundo
     glLightfv(GL_LIGHT0, GL_POSITION, (0.5, 1.0, 1.0, 0.0))
 

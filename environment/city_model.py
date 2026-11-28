@@ -1,29 +1,28 @@
-#  Franco De Escondrillas ft. Claude Code · 2026-11-26
+# A01739410 – Franco De Escondrillas
+# A01739769 – Enrique Jiménez
+# 2026-11-30
+
 """CityModel: la ciudad de AgentPy con su red vial, coches persistentes y semáforos BDI.
 
 Orden de cada paso: semáforos (BDI) → foto de los carriles → cada coche decide → cada coche se mueve.
 El modelo también arbitra los encuentros de la Étoile y corre el curso de manejo (`warmup`).
 """
 
-from __future__ import annotations
-
-import json
-import math
-from collections import Counter
-from dataclasses import dataclass
-from pathlib import Path
-
-import agentpy as ap
-import numpy as np
-
-from agents.car_agent import STATES, CarAgent
-from agents.game_theory import BRAKE, GO, OUTCOME_LABELS, OUTCOMES, ROLE_A, ROLE_B, Inform, belief, play
-from agents.traffic_light import TrafficLight, TrafficLightAgent, intersection_heads
 from config import (
     CAR_LENGTH, ETOILE_DETOUR, ETOILE_LANES, LIGHT_STOP_BACK, N_CARS, RETRY_TIME, SEED, SIM_DT, SPAWN_MARGIN,
     SPAWN_SPACING, START_SPEED, YIELD_BACK, YIELD_DECEL,
 )
+from agents.traffic_light import TrafficLight, TrafficLightAgent, intersection_heads
+from agents.game_theory import C, D, OUTCOMES, ROLE_A, ROLE_B, Inform, belief, play
 from environment.road_network import LaneIndex, RoadNetwork
+from agents.car_agent import STATES, CarAgent
+from dataclasses import dataclass
+from collections import Counter
+from pathlib import Path
+import agentpy as ap
+import numpy as np
+import json
+import math
 
 
 @dataclass
@@ -137,13 +136,13 @@ class CityModel(ap.Model):
         return a, b
 
     def start_encounter(self, entrant: CarAgent, rival: CarAgent) -> dict:
-        """Nuevo encuentro en la calle. Si B ya no alcanza a frenar, pasa sin jugar."""
+        """Nuevo encuentro en la calle. Si A ya no alcanza a frenar, pasa sin jugar."""
         lane = entrant.lane
         entrant.encounter = {"rival": rival, "winner": None, "retry_at": self.time}
         ring_len = self.network.lanes["etoile_0"].length
         room = (lane.end_s - rival.s) % ring_len - lane.tail_len - YIELD_BACK
         if room < rival.v ** 2 / (2 * YIELD_DECEL):
-            entrant.encounter["winner"] = ROLE_B
+            entrant.encounter["winner"] = ROLE_A
         else:
             self.encounters += 1
             self.play_merge(entrant)
@@ -157,15 +156,15 @@ class CityModel(ap.Model):
         """
         e, lane = entrant.encounter, entrant.lane
         rival = e["rival"]
-        a, b = self.encounter(entrant, rival)
+        a, b = self.encounter(rival, entrant)                  # A circula por la Étoile, B se integra
         self.outcomes[OUTCOMES[a, b]] += 1
         stop_s = lane.end_s - lane.tail_len - YIELD_BACK       # detrás de donde aparecerá el entrante
-        rival.yield_line = None if (a, b) == (BRAKE, GO) else (stop_s, entrant, self.time)
+        rival.yield_line = None if (a, b) == (D, C) else (stop_s, entrant, self.time)
         if a != b:
-            e["winner"] = ROLE_A if a == GO else ROLE_B
+            e["winner"] = ROLE_A if a == D else ROLE_B
             return
         e["retry_at"] = self.time + RETRY_TIME
-        if a == GO:
+        if a == D:
             entrant.v = rival.v = 0.0
 
     # --- utilidades ---
@@ -234,7 +233,7 @@ class CityModel(ap.Model):
         self.record("trips", self.trips)
         self.record("etoile_trips", len(self.trip_times["etoile"]))
         self.record("encounters", self.encounters)
-        for key in OUTCOME_LABELS:
+        for key in OUTCOMES.values():
             self.record(f"plays_{key}", self.outcomes[key])
         self.record("mean_speed", float(np.mean([c.v for c in self.cars])))
         for role, name in ((ROLE_A, "A"), (ROLE_B, "B")):
@@ -257,7 +256,7 @@ class CityModel(ap.Model):
         self.report("mean_trip_wait", mean(self.trip_waits))
         self.report("missed_exit_share", self.missed_exits / max(1, len(self.trip_times["etoile"])))
         self.report("encounters", self.encounters)
-        for key in OUTCOME_LABELS:
+        for key in OUTCOMES.values():
             self.report(f"share_{key}", self.outcomes[key] / plays)
 
 

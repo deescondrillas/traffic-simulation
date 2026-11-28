@@ -1,4 +1,6 @@
-#  Franco De Escondrillas ft. Claude Code · 2026-11-26
+# A01739410 – Franco De Escondrillas
+# A01739769 – Enrique Jiménez
+# 2026-11-30
 
 from math import cos, pi, radians
 from pathlib import Path
@@ -128,23 +130,14 @@ SPAWN_SPACING = CAR_LENGTH + 2 * IDM_S0 + 3.0   # m entre coches al repartirlos
 ETOILE_DETOUR = 5
 
 # --- Étoile: carriles ---
-LANE_BY_STREETS = (3, 6, 9)         # calles que hay que avanzar para usar el 2.º, 3.º y 4.º carril
+LANE_BY_STREETS = (2, 5, 8, 10)     # calles que hay que avanzar para usar el 2.º, 3.º, 4.º y 5.º carril
 LANE_CHANGE_ARC = 2 * pi / 12       # rad que se reservan por carril para volver al 0
 GAP_FRONT = 8.0          # m libres adelante para cambiar de carril
 GAP_BACK = 10.0          # m libres atrás para cambiar de carril
 LANE_CHANGE_TIME = 2.0   # s
 
 # --- Étoile: juego de dos roles ---
-# PAYOFFS[rol][acción propia][acción del rival]; rol 0 = A (se integra), 1 = B (circula);
-# acción 0 = frena (C), 1 = sigue (D)
-PAYOFFS = (
-    ((-2.0, -1.0), (0.0, -20.0)),
-    ((-3.0, -2.0), (0.0, -20.0)),
-)
 WARMUP_ROUNDS = 60       # rondas del curso de manejo (0 = conductores novatos)
-COORDINATION_TARGET = 0.95   # M5: proporción mínima de encuentros coordinados al final del curso
-COORDINATION_WINDOW = 10     # últimas rondas en que se mide
-BELIEF_BAND = (10, 90)       # percentiles de la banda de creencias en la gráfica
 RETRY_TIME = 1.5         # s antes de volver a jugar si los dos frenaron o los dos siguieron
 T_CONFLICT = 4.0         # s: un coche de la glorieta que llega antes es rival
 MIN_RIVAL_DIST = 10.0    # m antes de la curva del entrante: más cerca ya no se juega, se espera
@@ -160,11 +153,8 @@ LIGHT_STOP_BACK = 6.0    # m antes de la curva del radio donde se detiene el ani
 CYCLE_TIME = 40.0        # s de verde a repartir entre las dos fases
 MIN_GREEN = 6.0          # s
 MAX_EXTENSION = 10.0     # s
-CONVOY_D = 2.0           # s de arranque de un convoy, τ(n) = d + n·h
-CONVOY_H = 2.0           # s entre coches de un convoy
-BLINK_TIME = 3.0         # s de verde parpadeante antes del amarillo
-YELLOW_TIME = 3.0
-SHAPLEY_MAX_QUEUE = 8        # colas de 0 a 8 coches en la tabla de coalitions.ipynb
+BLINK_TIME = 2.0         # s de verde parpadeante antes del amarillo
+YELLOW_TIME = 2.0
 
 # --- Coche (modelo 3D) ---
 # Medidas en unidades del .obj ya con swapyz: X = largo (frente +X), Y = alto, Z = ancho
@@ -195,9 +185,13 @@ ZNEAR = 1.0
 ZFAR = 2000.0
 CLEAR_COLOR = (0.55, 0.62, 0.7, 1.0)
 CAMERA_TARGET = (0.0, 25.0, 0.0)  # m, el Arco
-CAMERA_ORBIT_RADIUS = 350.00
-CAMERA_START_HEIGHT = 250.0
-CAMERA_MIN_HEIGHT = 2.0
+CAMERA_START_DISTANCE = 416.0     # m del ojo al objetivo
+CAMERA_MIN_DISTANCE = 20.0
+CAMERA_MAX_DISTANCE = 1200.0      # por debajo de ZFAR para no recortar la ciudad
+CAMERA_START_ELEVATION = 33.0     # grados sobre el horizonte del objetivo
+CAMERA_MAX_ELEVATION = 89.0       # a 90° la vista coincide con el vector "arriba" de gluLookAt
+CAMERA_MIN_HEIGHT = 2.0           # m: el ojo nunca baja del piso
 ORBIT_STEP = 1.0    # grados por cuadro
 AUTO_ORBIT_STEP = ORBIT_STEP / 5
-HEIGHT_STEP = 3.0   # m por cuadro
+ELEVATION_STEP = 0.5  # grados por cuadro
+ZOOM_FACTOR = 1.02    # la distancia se multiplica o divide por esto en cada cuadro

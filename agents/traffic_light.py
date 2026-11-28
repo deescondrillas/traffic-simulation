@@ -1,4 +1,7 @@
-#  Franco De Escondrillas ft. Claude Code · 2026-11-26
+# A01739410 – Franco De Escondrillas
+# A01739769 – Enrique Jiménez
+# 2026-11-30
+
 """TrafficLightAgent: semáforo BDI en cada incorporación de un radio saliente al anillo exterior.
 
 - Creencias: colas por fase, a partir de los INFORM de los coches en la zona de aproximación.
@@ -10,15 +13,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from math import pi, radians
-
-import agentpy as ap
-
-from agents.game_theory import Inform, green_split
 from config import (
     BLINK_TIME, CYCLE_TIME, IDM_B, MAX_EXTENSION, MIN_GREEN, SIM_DT, TRAFFIC_LIGHTS, YELLOW_TIME,
 )
+from agents.game_theory import Inform, green_split
+from dataclasses import dataclass
+from math import pi, radians
+import agentpy as ap
 
 RING, MERGE = "RING", "MERGE"
 PHASES = (RING, MERGE)
@@ -96,7 +97,7 @@ class TrafficLightAgent(ap.Agent):
         self.max_queue = max(self.max_queue, self.queues[MERGE])
 
     def deliberate(self) -> None:
-        _, share = green_split(self.queues, default=RING)
+        share = green_split(self.queues, default=RING)
         for p in PHASES:
             self.budget[p] = max(MIN_GREEN, CYCLE_TIME * share[p])
 

@@ -1,15 +1,8 @@
-#  Franco De Escondrillas ft. Claude Code · 2026-11-26
+# A01739410 – Franco De Escondrillas
+# A01739769 – Enrique Jiménez
+# 2026-11-30
 
 from __future__ import annotations
-
-import bisect
-import json
-import math
-import unicodedata
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
-
-import numpy as np
 
 from config import (
     DIVERGE_OFFSET, ETOILE_LANES, ETOILE_SPOKE_CLIP, ETOILE_TURN_OFFSET, HERMITE_MIN_POINTS,
@@ -17,6 +10,13 @@ from config import (
     OUTER_RING_CENTER, OUTER_RING_RADIUS, RESAMPLE_STEP, ROAD_GRAPH, SPIKE_COS, SPOKE_AVENUES,
     SPOKE_CLIP, SPOKE_RADIUS_BAND,
 )
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+import numpy as np
+import unicodedata
+import bisect
+import json
+import math
 
 if TYPE_CHECKING:
     from agents.car_agent import CarAgent

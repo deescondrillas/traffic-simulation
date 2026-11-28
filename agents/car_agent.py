@@ -1,4 +1,7 @@
-#  Franco De Escondrillas ft. Claude Code · 2026-11-26
+# A01739410 – Franco De Escondrillas
+# A01739769 – Enrique Jiménez
+# 2026-11-30
+
 """CarAgent: coche reactivo con máquina de estados, IDM, destinos por calle y juego de dos roles.
 
 DRIVING ⇄ YIELDING        encuentro en la Étoile (frena, o lo detiene la regla contra el atasco)
@@ -8,19 +11,17 @@ DRIVING ⇄ CHANGING_LANE   solo en la Étoile
 
 from __future__ import annotations
 
-import math
-import random
-
-import agentpy as ap
-import numpy as np
-
-from agents.game_theory import ROLE_A, ROLE_B, Inform
 from config import (
     APPROACH_DIST, CAR_LENGTH, DECISION_DIST, EXIT_SPACE, GAP_BACK, GAP_FRONT, IDM_A, IDM_B, IDM_DELTA,
     IDM_S0, IDM_T, LANE_BY_STREETS, LANE_CHANGE_ARC, LANE_CHANGE_TIME, LOOKAHEAD, MAX_SPEED, MIN_GAP,
     MIN_RIVAL_DIST, N_STREETS, SIM_DT, STOP_EPS, T_CONFLICT, WHEELBASE, YIELD_TIMEOUT,
 )
 from environment.road_network import Lane, RoadNetwork, polar_angle
+from agents.game_theory import ROLE_A, ROLE_B, Inform
+import agentpy as ap
+import numpy as np
+import random
+import math
 
 DRIVING, YIELDING, STOPPED, CHANGING_LANE = "DRIVING", "YIELDING", "STOPPED", "CHANGING_LANE"
 STATES = (DRIVING, YIELDING, STOPPED, CHANGING_LANE)
@@ -52,8 +53,8 @@ class CarAgent(ap.Agent):
         self.target_lane = 0
         self.crossed = False                 # ya cruzó la línea de ceda/alto de su radio
         self.may_cross = True
-        self.encounter: dict | None = None   # juego en curso (como A)
-        self.yield_line: tuple[float, CarAgent, float] | None = None  # cede como B: (s, A, desde cuándo)
+        self.encounter: dict | None = None   # juego en curso (como B)
+        self.yield_line: tuple[float, CarAgent, float] | None = None  # cede como A: (s, B, desde cuándo)
         self.change_timer = 0.0
         self.prev_lane: str | None = None    # carril anterior, para mezclar la pose al cambiar de carril
         self.laps = 0
@@ -164,7 +165,7 @@ class CarAgent(ap.Agent):
         if self.yield_line is not None:
             _, entrant, since = self.yield_line
             e = entrant.encounter
-            if (entrant.crossed or e is None or e["rival"] is not self or e["winner"] == ROLE_B
+            if (entrant.crossed or e is None or e["rival"] is not self or e["winner"] == ROLE_A
                     or self.model.time - since > YIELD_TIMEOUT):
                 self.yield_line = None
 
@@ -212,7 +213,7 @@ class CarAgent(ap.Agent):
         if self.encounter is not None and not self.rival_coming():
             self.encounter = None                         # el rival ya pasó, salió o cambió de carril
         e = self.encounter
-        waiting_rival = e["rival"] if e is not None and e["winner"] != ROLE_B else None
+        waiting_rival = e["rival"] if e is not None and e["winner"] != ROLE_A else None
         blocked = end_idx.window(lane.end_s - lane.tail_len - MIN_RIVAL_DIST, front, exclude=waiting_rival)
         if e is None:
             if blocked:
@@ -221,11 +222,11 @@ class CarAgent(ap.Agent):
             if rival is None:
                 return True
             e = self.encounter = self.model.start_encounter(self, rival)
-        elif e["winner"] == ROLE_A and e["rival"].yield_line is None:
-            e["winner"] = ROLE_B                          # B se cansó de esperar
+        elif e["winner"] == ROLE_B and e["rival"].yield_line is None:
+            e["winner"] = ROLE_A                          # A se cansó de esperar
         elif e["winner"] is None and self.model.time >= e["retry_at"]:
             self.model.play_merge(self)
-        return e["winner"] == ROLE_A and not blocked
+        return e["winner"] == ROLE_B and not blocked
 
     def is_first(self) -> bool:
         """¿Es el primero de su radio que aún no cruza la línea?"""
@@ -238,7 +239,7 @@ class CarAgent(ap.Agent):
         return rival.lane_id == "etoile_0" and (self.lane.end_s - rival.s) % ring_len < ring_len / 2
 
     def find_rival(self) -> CarAgent | None:
-        """B: el coche del carril 0 que llegará al punto de incorporación en menos de T_CONFLICT s."""
+        """A: el coche del carril 0 que llegará al punto de incorporación en menos de T_CONFLICT s."""
         lane = self.lane
         ring = self.net.lanes["etoile_0"]
         idx = self.model.index["etoile_0"]
